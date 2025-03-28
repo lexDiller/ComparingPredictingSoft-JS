@@ -1,2 +1,17 @@
-# PredictComparingSoft-JS
-This project is an implementation of a web application that compares the predictions of segmentation models with a related regression model.
+# Compare Analysis App
+
+Это приложение анализирует данные по тушам и сравнивает различные параметры.
+
+## Запуск приложения
+
+### Production-версия через Docker
+
+Чтобы запустить приложение в production-режиме, выполните в корне проекта:
+
+```bash
+docker compose up --build
+```
+
+## Важно
+
+Данный проект подразумевает, что уже машине уже развернут PostgreSQL, который содержит необходимые таблицы
