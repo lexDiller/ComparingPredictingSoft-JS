@@ -79,19 +79,42 @@ const CarcassTable = ({ data, onRowClick }) => {
           <tr className="bg-base-200 text-base-content border-b border-base-300">
             {renderSortableHeader('carcass_id', 'ID')}
             {renderSortableHeader('weight_legacy', 'Weight')}
+            
+            {/* REA */}
             <th colSpan="2" className="text-center bg-blue-50 text-blue-800 border-b border-blue-200">REA</th>
+            
+            {/* Marbling */}
             <th colSpan="2" className="text-center bg-green-50 text-green-800 border-b border-green-200">Marbling</th>
+            
+            {/* Grade */}
             <th colSpan="2" className="text-center bg-purple-50 text-purple-800 border-b border-purple-200">Grade</th>
+
+            {/* Добавляем новую группу столбцов для Marbling Quality */}
+            <th colSpan="2" className="text-center bg-yellow-50 text-yellow-800 border-b border-yellow-200">
+              Marbling Quality
+            </th>
           </tr>
           <tr className="bg-base-100 text-sm">
+            {/* ID */}
             <th></th>
+            {/* Weight */}
             <th></th>
+            
+            {/* REA: Legacy / Predict */}
             {renderSortableHeader('rea_legacy', 'Legacy', 1, "bg-blue-50 text-blue-800 border-r border-blue-100")}
             {renderSortableHeader('rea_predict', 'Predict', 1, "bg-blue-50 text-blue-800")}
+            
+            {/* Marbling: Legacy / Predict */}
             {renderSortableHeader('marbling_legacy', 'Legacy', 1, "bg-green-50 text-green-800 border-r border-green-100")}
             {renderSortableHeader('marbling_predict', 'Predict', 1, "bg-green-50 text-green-800")}
+            
+            {/* Grade: Legacy / Predict */}
             {renderSortableHeader('marbling_legacy_grade', 'Legacy', 1, "bg-purple-50 text-purple-800 border-r border-purple-100")}
             {renderSortableHeader('marbling_predict_grade', 'Predict', 1, "bg-purple-50 text-purple-800")}
+
+            {/* Marbling Quality: Legacy / Predict */}
+            {renderSortableHeader('marbling_legacy_quality', 'Legacy', 1, "bg-yellow-50 text-yellow-800 border-r border-yellow-100")}
+            {renderSortableHeader('marbling_predict_quality', 'Predict', 1, "bg-yellow-50 text-yellow-800")}
           </tr>
         </thead>
         <tbody>
@@ -116,10 +139,11 @@ const CarcassTable = ({ data, onRowClick }) => {
                   </svg>
                 </div>
               </td>
-              {/* Weight (Legacy) – оставляем по умолчанию */}
+              {/* Weight (Legacy) */}
               <td className="font-medium">
                 {row.weight_legacy || 'N/A'}
               </td>
+              
               {/* REA (Legacy) */}
               <td className="border-r border-blue-100 bg-blue-50 text-black">
                 {row.rea_legacy || 'N/A'}
@@ -131,6 +155,7 @@ const CarcassTable = ({ data, onRowClick }) => {
                   <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 ml-1"></span>
                 )}
               </td>
+              
               {/* Marbling (Legacy) */}
               <td className="border-r border-green-100 bg-green-50 text-black">
                 {row.marbling_legacy || 'N/A'}
@@ -142,6 +167,7 @@ const CarcassTable = ({ data, onRowClick }) => {
                   <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 ml-1"></span>
                 )}
               </td>
+              
               {/* Grade (Legacy) */}
               <td className="border-r border-purple-100 bg-purple-50 text-black">
                 {row.marbling_legacy_grade || 'N/A'}
@@ -150,6 +176,18 @@ const CarcassTable = ({ data, onRowClick }) => {
               <td className={`bg-purple-50 text-base-content ${getComparisonStyle(row.marbling_legacy_grade, row.marbling_predict_grade)}`}>
                 {row.marbling_predict_grade || 'N/A'}
                 {isDifferent(row.marbling_legacy_grade, row.marbling_predict_grade) && (
+                  <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 ml-1"></span>
+                )}
+              </td>
+
+              {/* Marbling Quality (Legacy) */}
+              <td className="border-r border-yellow-100 bg-yellow-50 text-black">
+                {row.marbling_legacy_quality || 'N/A'}
+              </td>
+              {/* Marbling Quality (Predict) */}
+              <td className={`bg-yellow-50 text-base-content ${getComparisonStyle(row.marbling_legacy_quality, row.marbling_predict_quality)}`}>
+                {row.marbling_predict_quality || 'N/A'}
+                {isDifferent(row.marbling_legacy_quality, row.marbling_predict_quality) && (
                   <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 ml-1"></span>
                 )}
               </td>

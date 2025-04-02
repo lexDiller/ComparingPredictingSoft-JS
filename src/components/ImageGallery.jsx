@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react'
 
 const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
-  const [imageLoading, setImageLoading] = useState({raw: true, orig: true, new: true})
-  const [imageError, setImageError] = useState({raw: false, orig: false, new: false})
+  const [imageLoading, setImageLoading] = useState({ raw: true, orig: true, new: true })
+  const [imageError, setImageError] = useState({ raw: false, orig: false, new: false })
   const [selectedImage, setSelectedImage] = useState(null)
-
-  // Определяем пути к изображениям
-  const imageSources = {
-    raw: imageAvailability.paths && imageAvailability.paths.raw 
-      ? `/images/original_images/${imageAvailability.paths.raw}` 
-      : `/images/original_images/${carcassId}.png`,
-    orig: imageAvailability.paths && imageAvailability.paths.orig 
-      ? `/images/legacy_images/${imageAvailability.paths.orig}` 
-      : `/images/legacy_images/${carcassId}.png`,
-    new: imageAvailability.paths && imageAvailability.paths.new 
-      ? `/images/processed_images/${imageAvailability.paths.new}` 
-      : `/images/processed_images/${carcassId}.png`
-  }
+  // Состояние fallback для типов raw и orig
+  const [fallback, setFallback] = useState({ raw: 1, orig: 1 })
 
   useEffect(() => {
-    setImageLoading({raw: true, orig: true, new: true})
-    setImageError({raw: false, orig: false, new: false})
+    setImageLoading({ raw: true, orig: true, new: true })
+    setImageError({ raw: false, orig: false, new: false })
     setSelectedImage(null)
+    setFallback({ raw: 1, orig: 1 }) // сброс fallback при смене carcassId
   }, [carcassId])
 
   const handleImageLoad = (type) => {
@@ -31,6 +21,13 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
   const handleImageError = (type) => {
     setImageLoading(prev => ({ ...prev, [type]: false }))
     setImageError(prev => ({ ...prev, [type]: true }))
+    // Если сейчас выбран первый вариант, переключаем на второй
+    if (type === 'raw' && fallback.raw === 1) {
+      setFallback(prev => ({ ...prev, raw: 2 }))
+    }
+    if (type === 'orig' && fallback.orig === 1) {
+      setFallback(prev => ({ ...prev, orig: 2 }))
+    }
   }
 
   const openModal = (type) => {
@@ -43,7 +40,24 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
     setSelectedImage(null)
   }
 
-  // Модальное окно для увеличенного просмотра изображения
+  // Формируем пути к изображениям с учётом fallback
+  const imageSources = {
+    raw: imageAvailability.paths && imageAvailability.paths.raw 
+      ? `/images/original_images/${imageAvailability.paths.raw}` 
+      : fallback.raw === 1 
+        ? `/images/original_images/0000${carcassId}-1c.jpg`
+        : `/images/original_images/0000${carcassId}-2c.jpg`,
+    orig: imageAvailability.paths && imageAvailability.paths.orig 
+      ? `/images/legacy_images/${imageAvailability.paths.orig}` 
+      : fallback.orig === 1 
+        ? `/images/legacy_images/0000${carcassId}-1s.jpg`
+        : `/images/legacy_images/0000${carcassId}-2s.jpg`,
+    new: imageAvailability.paths && imageAvailability.paths.new 
+      ? `/images/processed_images/${imageAvailability.paths.new}` 
+      : `/images/processed_images/processed_${carcassId}.jpg`
+  }
+
+  // Рендер модального окна для увеличенного просмотра изображения
   const renderImageModal = () => {
     if (!selectedImage) return null
     
@@ -66,7 +80,7 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
     )
   }
 
-  // Карточка с изображением
+  // Рендер карточки изображения
   const renderImageCard = (type, title) => {
     if (!imageAvailability[type]) {
       return (
@@ -86,9 +100,9 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
       <div className="card bg-base-100 border h-full shadow-sm hover:shadow-md transition-shadow duration-300">
         <div className="relative h-72 w-full cursor-pointer" onClick={() => openModal(type)}>
           <img 
+            key={`${carcassId}-${type}-${fallback[type]}`}
             src={imageSources[type]} 
             alt={title} 
-            // ВАЖНО: заменяем object-cover на object-contain, чтобы не обрезать изображение
             className={`rounded-t-xl object-contain h-full w-full ${imageLoading[type] ? 'invisible' : 'visible'}`}
             onLoad={() => handleImageLoad(type)}
             onError={() => handleImageError(type)}
@@ -115,7 +129,6 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
         </div>
         <div className="card-body p-4">
           <h2 className="card-title text-lg">{title}</h2>
-          {/* Дополнительные данные для "orig" */}
           {type === 'orig' && (
             <div className="stats shadow-sm bg-base-200 text-sm mt-2">
               <div className="stat p-2">
@@ -125,7 +138,6 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
               </div>
             </div>
           )}
-          {/* Дополнительные данные для "new" */}
           {type === 'new' && (
             <div className="stats shadow-sm bg-base-200 text-sm mt-2">
               <div className="stat p-2">
@@ -140,7 +152,6 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
     )
   }
 
-  // Функция для расчёта разницы (пример, если нужно сравнивать marbling_legacy и marbling_predict)
   const calculateDifference = (legacy, predict) => {
     if (!legacy || !predict) return null
     const diff = ((predict - legacy) / legacy * 100).toFixed(1)
@@ -171,21 +182,30 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
               Сравнение анализа
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* 
+              Увеличили количество столбцов до 3, чтобы в одной строке 
+              поместить: 
+                1) Показатель Marbling 
+                2) Категория (Grade) 
+                3) Качество (Quality) 
+            */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              
+              {/* Показатель Marbling */}
               <div className="bg-base-100 p-4 rounded-lg shadow-sm">
                 <div className="text-sm font-medium mb-1">Показатель Marbling</div>
                 <div className="flex items-center gap-2">
                   <div className="stats bg-base-200 shadow-sm">
                     <div className="stat p-2">
                       <div className="stat-title text-xs">Исходное</div>
-                      <div className="stat-value text-lg">{carcassData.marbling_legacy || 'N/A'}</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_legacy || 'N/A'}</div>
                     </div>
                   </div>
                   <div className="text-xl">→</div>
                   <div className="stats bg-base-200 shadow-sm">
                     <div className="stat p-2">
                       <div className="stat-title text-xs">Новое</div>
-                      <div className="stat-value text-lg">{carcassData.marbling_predict || 'N/A'}</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_predict || 'N/A'}</div>
                     </div>
                   </div>
                   {marblingDiff && (
@@ -195,21 +215,22 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
                   )}
                 </div>
               </div>
-              
+
+              {/* Категория (Grade) */}
               <div className="bg-base-100 p-4 rounded-lg shadow-sm">
                 <div className="text-sm font-medium mb-1">Категория (Grade)</div>
                 <div className="flex items-center gap-2">
                   <div className="stats bg-base-200 shadow-sm">
                     <div className="stat p-2">
                       <div className="stat-title text-xs">Исходное</div>
-                      <div className="stat-value text-lg">{carcassData.marbling_legacy_grade || 'N/A'}</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_legacy_grade || 'N/A'}</div>
                     </div>
                   </div>
                   <div className="text-xl">→</div>
                   <div className="stats bg-base-200 shadow-sm">
                     <div className="stat p-2">
                       <div className="stat-title text-xs">Новое</div>
-                      <div className="stat-value text-lg">{carcassData.marbling_predict_grade || 'N/A'}</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_predict_grade || 'N/A'}</div>
                     </div>
                   </div>
                   {carcassData.marbling_legacy_grade !== carcassData.marbling_predict_grade && (
@@ -217,6 +238,30 @@ const ImageGallery = ({ carcassId, imageAvailability, carcassData }) => {
                   )}
                 </div>
               </div>
+
+              {/* Качество (Quality) */}
+              <div className="bg-base-100 p-4 rounded-lg shadow-sm">
+                <div className="text-sm font-medium mb-1">Качество (Quality)</div>
+                <div className="flex items-center gap-2">
+                  <div className="stats bg-base-200 shadow-sm">
+                    <div className="stat p-2">
+                      <div className="stat-title text-xs">Исходное</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_legacy_quality || 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div className="text-xl">→</div>
+                  <div className="stats bg-base-200 shadow-sm">
+                    <div className="stat p-2">
+                      <div className="stat-title text-xs">Новое</div>
+                      <div className="stat-value text-xl">{carcassData.marbling_predict_quality || 'N/A'}</div>
+                    </div>
+                  </div>
+                  {carcassData.marbling_legacy_quality !== carcassData.marbling_predict_quality && (
+                    <div className="badge badge-lg badge-warning ml-2">Изменилось</div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
